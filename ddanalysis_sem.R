@@ -5,7 +5,7 @@ rm(list=ls())
 #Need to have old version of piecewiseSEM to use GLMMTMB
 #library(devtools)
 
-install_version("piecewiseSEM", version = "1.2.1", repos = "http://cran.us.r-project.org")
+#install_version("piecewiseSEM", version = "1.2.1", repos = "http://cran.us.r-project.org")
 library(tidyverse)
 library(tidyverse)
 library(glmmTMB)
