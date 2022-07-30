@@ -12,7 +12,7 @@ library(car)
 library(gridExtra)
 library(performance)
 library(cowplot)
-setwd("~/Documents/Research/Woolly Bear Virus Project/25 sites paper")
+setwd("~/Documents/Research/Woolly Bear Virus Project/25 sites paper/diseasedduv")
 
 ## Data processing
 sitesdata<-read.csv('sitesdata.csv')
@@ -33,6 +33,7 @@ str(vsites)
 vsitesm<-vsites
 vsitesm1<-left_join(vsitesm,sitesdata,by="site")
 vsitesm1
+vsitesm2<-vsitesm1[!is.na(vsitesm1$infection_n),]
 cats<-read.csv('ads_post_mort_cleaned.csv')
 str(catsm)
 catsm<-cats
@@ -100,9 +101,9 @@ summary(clmm2.1)
 #Probability of survival to end of life
 
 
-survival.ed.m1<-glmmTMB(cbind(num_nat_loose,total_reared-num_nat_loose)~log(this_year.y)+log(last_year.y)+edd360to180.scaledlog+emerged_parasite_m,family =betabinomial,data=vsitesm1 ,control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")));summary(survival.ed.m1)
+survival.ed.m1<-glmmTMB(cbind(num_nat_loose,total_reared-num_nat_loose)~log(this_year.y)+log(last_year.y)+edd360to180.scaledlog+emerged_parasite_m,family =betabinomial,data=vsitesm2 );summary(survival.ed.m1)
 
-
+source(system.file("other_methods","influence_mixed.R", package="glmmTMB"))
 survival.ed.m1_influence <- influence_mixed(survival.ed.m1, groups="site")
 car::infIndexPlot(survival.ed.m1_influence)
 
@@ -115,7 +116,7 @@ vsitesm1$num_nat_loose_n<-vsitesm1$num_nat_loose/vsitesm1$total_reared
 
 predframeinfection <- with(ads_post_mort_no_parasite_cleaned,expand.grid(site=levels(site),last_year.y=seq(min(last_year.y),max(last_year.y), .01),this_year.y=mean(this_year.y),insolation360to180=mean(insolation360to180)))
 
-mydf <- ggpredict(pr.inf.m2, terms = c("last_year.y"))
+mydf <- ggpredict(pr.inf.m2, terms = c("last_year.y[exp]"))
 str(mydf)
 
 mydf$last_year.y<-mydf$x
@@ -225,7 +226,6 @@ survplot
 
 mydf7 <- ggpredict(survival.ed.m1, terms = c("edd360to180.scaledlog"))
 str(mydf7)
-summary(survival.ed.m1)
 mydf7$edd360to180.scaledlog<-mydf7$x
 mydf7$surv_ed<-mydf7$predicted
 mydf7l<-mydf7
@@ -363,3 +363,17 @@ vsitesm1s<-vsitesm1s[vsitesm1s$site!='FVW',]
 
 
 survival.ed.m1s<-glmmTMB(cbind(num_nat_loose,total_reared-num_nat_loose)~log(this_year.y)+log(last_year.y)+edd360to180.scaledlog+emerged_parasite_m,family =betabinomial,data=vsitesm1s ,control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")));summary(survival.ed.m1s)
+
+#Revision of Figure 2
+
+pp2<-ggplot(ads_post_mort_no_parasite_cleaned,aes(x=last_year.y,y=infection, group=site))+scale_x_log10()+ stat_summary() + xlab("Density last year") + ylab("Proportion infected")+ theme_classic()+theme(text=element_text(size=20), plot.title=element_text(hjust=0, size=20))+geom_line(data=mydf,aes(x=last_year.y,y=infection,group=group), size=1.5)+geom_line(data=mydfl,aes(x=last_year.y,y=infection,group=group),  lty=2)+geom_line(data=mydfh,aes(x=last_year.y,y=infection,group=group),  lty=2)+ylim(0,1)
+
+pp2
+
+
+pp3<-ggplot(ads_post_mort_no_parasite_cleaned,aes(x=edd360to180.scaledlog,y=infection, group=site))+scale_x_log10()+ stat_summary() + xlab("Density last year") + ylab("Proportion infected")+ theme_classic()+theme(text=element_text(size=20), plot.title=element_text(hjust=0, size=20))+geom_line(data=mydf2,aes(x=edd360to180.scaledlog,y=infection,group=group), size=1.5)+geom_line(data=mydf2l,aes(x=edd360to180.scaledlog,y=infection,group=group),  lty=2)+geom_line(data=mydf2h,aes(x=edd360to180.scaledlog,y=infection,group=group),  lty=2)+ylim(0,1)+xlab("Log Erythemal Daily Dose (scaled)")
+
+pp3
+
+plot_grid(pp2,pp3,labels=c('a','b'), rel_widths=c(1,1))
+
